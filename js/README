@@ -1,0 +1,9 @@
+Password Card Generator
+=======================
+
+Point your browser to the location of the pwcardgen.html file:
+  file:///home/user/Private/pwvardgen.html?key=my_secret_key
+
+my_secret_key is the secret that is used to generate the password.
+Card are based on that password. If you loose your card, simple generate it again.:browse confirm wa
+
