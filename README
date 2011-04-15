@@ -1,0 +1,17 @@
+Password Card Geneator
+======================
+
+This experimental project generates a Password Card for your use.
+
+The card is password based so if you loose your card, you can re-generate it.
+The card is as safe as your master password is.
+
+The basic alghorithm is:
+ * generate a text pad (some ascii chars)
+ * entrypt the text pad with your master password using blowfish
+ * the binary blowfish output is then parsed through an encoding filter
+ * this encoding converts each byte to a char and some are filtered out
+
+There are two flavors:
+ perl/ - perl script
+ js/ - html page that uses javascript and that can be run from a browser
