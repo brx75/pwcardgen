@@ -1,0 +1,47 @@
+tr.evenrow {
+  background-color: #99ff99;
+}
+
+th {
+  padding: 0;
+}
+
+th.col1 {
+  background-color: #99ff99;
+}
+
+td.col1 {
+  background-color: #99ff99;
+}
+
+
+td.evencol {
+  background-color: #ccffff;
+}
+
+table.frontCardTable {
+  border: 1px solid #666666;
+/*font-family: monospace;*/
+/*  font-weight: bold;*/
+  text-align: center;
+  width: 100%;
+}
+
+th {
+  font-weight: bolder;
+}
+
+tr.row0 {
+  border-bottom: 1px solid #666666 !important;
+}
+
+div.frontCardDiv {
+	width: 1011;
+	height: 637;
+	border: 1px solid  #bfbfbf;
+}
+
+div.charDiv {
+	position: relative;
+}
+

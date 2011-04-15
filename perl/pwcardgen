@@ -1,0 +1,246 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Long;
+use Crypt::GeneratePassword qw(word chars);
+use Crypt::CBC;
+use Crypt::Blowfish;
+use Term::ReadKey;
+use Term::ANSIColor;
+use MIME::Base64;
+use HTML::Entities;
+use POSIX;
+
+my $USAGE="usage: pwgencard [--size=WxH] [--color] [--filter=filterid ...] [--textpad=filename] [random|passphrase]\n";
+
+my $color=0;
+my $out="simple";
+my $padfile=undef;
+my @opt_filter;
+my $size="ZxZ";
+my @width=("A","Z");
+my @height=("A","Z");
+
+my %kfilter=(
+    it => '{}`~',
+    generic => '\\|/',
+    symbols => '!"£$%&/()=?^*][{}§~`'
+);
+my $filter=$kfilter{generic};
+
+GetOptions(
+    "color" => \$color,
+    "out=s" =>\$out,
+    "textpad=s" => \$padfile,
+    "filter=s" => \@opt_filter,
+    "size=s" => \$size
+);
+my $method=$ARGV[0] || "usage";
+
+
+# Parse "--filter=... --filter=..."
+@opt_filter = split(/,/,join(',',@opt_filter));
+if (defined(@opt_filter)){
+    if ($opt_filter[0] =~ /^help$/ ) {
+        print "Defined char filters: ";
+        print (join(' ',(keys(%kfilter))));
+        print "\n";
+        exit 0;
+    } 
+    foreach my $f (@opt_filter){
+        $filter=$filter . $kfilter{$f};
+    }
+}
+
+# Parse "--size=WxH"
+if (defined($size)){
+    ($width[1],$height[1])=split('x',$size);
+    $width[0]=0 if (isdigit($width[1])); 
+    $width[0]='A' if (isalpha($width[1])); 
+    $height[0]=0 if (isdigit($height[1])); 
+    $height[0]='A' if (isalpha($height[1])); 
+    #print STDERR "DEBUG: size=$size w=@width height=@height\n";
+}
+
+
+my %f_table = (
+    random => \&random,
+    genpad => \&genpad,
+    passphrase => \&passphrase,
+    usage => sub {print $USAGE; exit}
+);
+
+my %output = (
+    html =>\&htmlout,
+    simple =>  \&printout
+);
+
+my $ascii_low=32;
+my $ascii_high=126;
+my $alpha_n=24;
+
+sub random() {
+    printf("%2s",' ');
+    for my $x ( "A" .. "Z" ) {
+        printf( "%4s", $x );
+    }
+    print "\n";
+    for my $y ( "A" .. "Z" ) {
+        printf( "%3s", $y );
+        for my $x ( "A" .. "Z" ) {
+            my $word = chars( 1, 3 );
+            printf( "%4s", $word );
+        }
+        print "\n";
+    }
+}
+
+sub genpad() {
+    my $pad;
+    open(FH,'>',\$pad) || die "$!";
+    for (my $y=126;$y > 32; $y--) {
+        for (my $x=32;$x < 126; $x++) {
+            my $word=chr($x) . chr($y);
+            print FH $word;
+        }
+    }
+    close $pad;
+    return $pad;
+}
+
+sub encrypt{
+    my $key=shift;
+    my $plaintext=shift;
+    my $ciphertext;
+    my $iv     = '01234567';
+    my $cipher = Crypt::CBC->new(
+        -key => "$key",
+        -cipher => 'Blowfish',
+        -header => 'none',
+        -iv => $iv
+    );
+    $cipher->start('encrypting');
+    open (IFH, '<',\$plaintext);
+    open (OFH, '>',\$ciphertext);
+    my $buffer;
+    while (read(IFH,$buffer,1024)){
+        print OFH $cipher->crypt($buffer);
+    }
+    print OFH $cipher->finish;
+    close OFH;
+    return $ciphertext;
+}
+
+sub getpassword(){
+    my $passphrase1='1';
+    my $passphrase2='2';
+    while ( $passphrase1 ne $passphrase2 ){
+    print STDERR "Enter a passphrase that will be used to generate you password card: " ;
+    #ReadMode('noecho');
+    $passphrase1 = ReadLine(0);
+    print STDERR "Enter your passphrase again: ";
+    $passphrase2 = ReadLine(0);
+    ReadMode(0);
+    }
+
+    return $passphrase1;
+}
+
+sub encode{
+    my $data=shift;
+    my $out;
+    open (EOUT,'>',\$out);
+
+    my @a=unpack('(C)*',$data);
+    foreach (@a){
+        my $v=($_ % ($ascii_high - $ascii_low) + $ascii_low);
+        my $c=chr($v);
+        #print STDERR "DEBUG: v=$v c=$c filter=$filter index=". index($filter,$c) . "\n";
+        if (index($filter,$c) lt 0){
+            print EOUT $c;
+        }
+    }
+    close EOUT;
+    return $out;
+}
+
+sub htmlout{
+    my $data=shift;
+    my @a=unpack('(a[3])*',$data);
+
+    my @rows=('evenrow','oddrow');
+    
+    my @cols=('evencol','oddcol');
+
+    my $i=0;
+    my $ix=0;
+    my $iy=0;
+    print '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">' . "\n";
+    print "<html>\n";
+    print "<head><link href='style.css' rel='stylesheet' type='text/css'>\n";
+    print "<body>\n";
+    print "<table class='pwCard'>\n";
+    print "\t<tr class='". $rows[$iy%2]  ."' id='row".$iy."' >\n";
+    print "\t\t<th> </th>";
+    for my $x ( $width[0] .. $width[1] ) {
+        #print STDERR "ix=$ix ";
+        print "<th class='" . $cols[$ix % 2] . "'>" . $x . "</th>";
+        $ix++;
+    }
+    print "\t</tr>\n";
+    
+    $ix=0;
+    for my $y ( $height[0] .. $height[1] ) {
+        $iy++;
+        print "\t<tr class='" .$rows[$iy % 2] . "' id='row".$iy."'>\n";
+        print "\t\t<th>$y</th>\n";
+        for my $x ( $width[0] .. $width[1] ) {
+            #print STDERR "ix=$ix (" . $ix %2 . ")  iy=$iy (" . $iy % 2 . ")\n";
+            $i++;
+            print "\t\t<td class='" . $cols[$ix % 2] . "'>" . encode_entities($a[$i]) . "</td>\n";
+            $ix++;
+        }
+        print "\t</tr>\n";
+    }
+    print "</table>\n";
+    print "</body>\n";
+    print "</html>\n";
+
+}
+
+sub printout{
+    my $data=shift;
+    my @a=unpack('(a[3])*',$data);
+
+    my $i=0;
+
+    printf("%2s",' ');
+    for my $x ( $width[0] .. $width[1] ) {
+        printf( "%4s", $x );
+    }
+
+    print "\n";
+    for my $y ( $height[0] .. $height[1] ) {
+        printf( "%3s", $y );
+        for my $x ( $width[0] .. $width[1] ) {
+            $i++;
+            printf( "%4s", $a[$i] );
+        }
+        print "\n";
+    }
+}
+
+sub passphrase(){
+    my $password = getpassword();
+    my $pad = genpad();
+    print "DEBUG:\n$pad\n";
+    my $data = encrypt($password,$pad);
+    print "DEBUG:\n$data\n";
+    return encode($data,$filter);
+}
+
+
+if (defined($f_table{$method})){
+    my $data=&{ $f_table{$method}}();
+    &{ $output{$out}}($data);
+}
