@@ -25,9 +25,7 @@
 <script type = "text/javascript" src="blowfish.js"></script>
 <script type = "text/javascript">
 
-var width=12; 
-var height=14;
-var groupsize=3;
+
 
 var charCodeRange = {
 	start: 65,
@@ -35,7 +33,6 @@ var charCodeRange = {
 }
 var ascii_low = 33;
 var ascii_high = 126;
-var filter="\\|£/()=^*][{}§~<>"
 
 
 function genpad(){
@@ -50,8 +47,7 @@ function genpad(){
  return pad.join('');
 }
 
-
-function encode(data){
+function encode(data,filter){
   var out = new String();
   var l=data.length;
   
@@ -65,7 +61,6 @@ function encode(data){
   }
   return out;
 }
-
 
 function getParameter ( queryString, parameterName ) {
   // Add "=" to the parameter name (i.e. parameterName=value)
@@ -90,7 +85,7 @@ function getParameter ( queryString, parameterName ) {
   }
 }
 
-function outface(data,table,offset,w_min,w_max,h_min,h_max){
+function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,y_opt){
   var i=0
   
   var tr = document.createElement('tr');
@@ -112,7 +107,11 @@ function outface(data,table,offset,w_min,w_max,h_min,h_max){
 	  cell[ix] = document.createElement('th');
 	  cell[ix].setAttribute('class','hhead'+ec);
 	  cell[ix].setAttribute('id','th'+cc);
-	  cell[ix].innerHTML = String.fromCharCode(cc);
+	  if (x_opt == "x_alpha"){
+  	  cell[ix].innerHTML = String.fromCharCode(cc);
+  	} else {
+  	  cell[ix].innerHTML = ix-1;
+  	}
     tr.appendChild(cell[ix]);  	  
     
   }
@@ -138,7 +137,11 @@ function outface(data,table,offset,w_min,w_max,h_min,h_max){
     cell[0] = document.createElement('th');
 	  cell[0].setAttribute('class','vhead'+er);
 	  cell[0].setAttribute('id','th'+cc);
-	  cell[0].innerHTML = String.fromCharCode(cc);
+	  if (y_opt=="y_alpha"){
+  	  cell[0].innerHTML = String.fromCharCode(cc);
+  	} else {
+  	  cell[0].innerHTML = iy-1;
+  	}
     row[iy].appendChild(cell[0]);
     
     for (var ix = w_min+1; ix <= w_max+1; ix++){
@@ -162,34 +165,40 @@ function outface(data,table,offset,w_min,w_max,h_min,h_max){
 }
 
 
-function printout(data){
-  var i=outface(data,document.getElementById("frontCardTable"),0,0,width,0,height/2-1);
-  outface(data,document.getElementById("backCardTable"),i,0,width,(height/2),height-1);
+function printout(data,width,height,groupsize,x_opt,y_opt){
+  var i=printoutface(data,
+    document.getElementById("frontCardTable"),
+    0,0,width,0,height/2-1,
+    groupsize,
+    x_opt,y_opt);
+  printoutface(data,document.getElementById("backCardTable"),
+    i,0,width,(height/2),height-1,
+    groupsize,
+    x_opt,y_opt);
 }
 
+function genPasswordCard(key,filter){
+
+  var pad = genpad();
+  var ciphertext = encrypt(key,pad);
+  //document.write("<p>ciphertext: "+ ciphertext + "</p>");
+
+  var encodedtext = encode(ciphertext,filter);
+
+  return encodedtext;
+}
+
+/* MAIN */
+var width=10; 
+var height=14;
+var groupsize=3;
 
 var key= getParameter (window.top.location.search,"key");
-//document.write("Your key is: " + key);
 
-var pad = genpad();
-var ciphertext = encrypt(key,pad);
-//document.write("<p>ciphertext: "+ ciphertext + "</p>");
+var filter="\\|£/()=^*][{}§~<>"
+var encodedtext = genPasswordCard(key,filter);
 
-var encodedtext = encode(ciphertext);
-//document.write("<p>encodedtext: "+encodedtext + "</p>");
-
-var plaintext = decrypt(key,ciphertext);
-
-//var plaintextDiv = document.getElementById("plaintextDiv");
-//plaintextDiv.appendChild(document.createTextNode(plaintext));
-
-var ciphertextDiv = document.getElementById("ciphertextDiv");
-//ciphertextDiv.appendChild(document.createTextNode(encodedtext))
-
-printout(encodedtext);
-
-//var textpadDiv = document.getElementById("textpadDiv");
-//textpadDiv.appendChild(document.createTextNode(pad));
+printout(encodedtext,width,height,groupsize,"x_num","y_alpha");
 
 </script>
 </html>
