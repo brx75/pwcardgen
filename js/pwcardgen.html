@@ -1,23 +1,48 @@
 <html>
+
 <head>
+<link href='style.css' rel='stylesheet' type='text/css' media='screen'>
+<link href='style.css' rel='stylesheet' type='text/css' media='print'>
 <title>Password Card Generator</title>
 </head>
+
 <body>
 <div id='textpadDiv'></div>
 <div id='plaintextDiv'></div>
 <div id='ciphertextDiv'></div>
 <div id='base64textDiv'></div>
+
+<div id='frontCard' class='cardDiv'>
+  <table id='frontCardTable' class='cardTable'>
+  </table>
+</div>
+<div id='backCard' class='cardDiv'>  
+<table id='backCardTable' class='cardTable'>
+  </table>
+</div>
+
 </body>
 <script type = "text/javascript" src="blowfish.js"></script>
-<script type = "text/javascript" src="webtoolkit.base64.js"></script>
 <script type = "text/javascript">
 
+var width=12; 
+var height=14;
+var groupsize=3;
+
+var charCodeRange = {
+	start: 65,
+	end: 90
+}
+var ascii_low = 33;
+var ascii_high = 126;
+var filter="\\|£/()=^*][{}§~<>"
+
+
 function genpad(){
- var minascii = 33;
- var maxascii = 126;
+
   var pad = new Array();
-  for (var y=maxascii;y > minascii; y--){
-    for (var x=minascii; x < maxascii ; x++ ){
+  for (var y=ascii_high;y > ascii_low; y--){
+    for (var x=ascii_low; x < ascii_high ; x++ ){
       pad.push(String.fromCharCode(x));
       pad.push(String.fromCharCode(y));
     }
@@ -26,51 +51,142 @@ function genpad(){
 }
 
 
-function getParameter ( queryString, parameterName ) {
-// Add "=" to the parameter name (i.e. parameterName=value)
-var parameterName = parameterName + "=";
-if ( queryString.length > 0 ) {
-// Find the beginning of the string
-begin = queryString.indexOf ( parameterName );
-// If the parameter name is not found, skip it, otherwise return the value
-if ( begin != -1 ) {
-// Add the length (integer) to the beginning
-begin += parameterName.length;
-// Multiple parameters are separated by the "&" sign
-end = queryString.indexOf ( "&" , begin );
-if ( end == -1 ) {
-end = queryString.length
-}
-// Return the string
-return unescape ( queryString.substring ( begin, end ) );
-}
-// Return "null" if no parameter has been found
-return "null";
-}
+function encode(data){
+  var out = new String();
+  var l=data.length;
+  
+  for (var i=0; i <= data.length; i++){
+    var a = data.charCodeAt(i);
+    var v=(a % (ascii_high - ascii_low) + ascii_low);
+    var c=String.fromCharCode(v);
+    if (filter.indexOf(c) < 0){
+      out += c;
+    }
+  }
+  return out;
 }
 
+
+function getParameter ( queryString, parameterName ) {
+  // Add "=" to the parameter name (i.e. parameterName=value)
+  var parameterName = parameterName + "=";
+  if ( queryString.length > 0 ) {
+    // Find the beginning of the string
+    begin = queryString.indexOf ( parameterName );
+    // If the parameter name is not found, skip it, otherwise return the value
+    if ( begin != -1 ) {
+      // Add the length (integer) to the beginning
+      begin += parameterName.length;
+      // Multiple parameters are separated by the "&" sign
+      end = queryString.indexOf ( "&" , begin );
+      if ( end == -1 ) {
+        end = queryString.length
+      }
+      // Return the string
+      return unescape ( queryString.substring ( begin, end ) );
+    }
+    // Return "null" if no parameter has been found
+    return "null";
+  }
+}
+
+function outface(data,table,offset,w_min,w_max,h_min,h_max){
+  var i=0
+  
+  var tr = document.createElement('tr');
+  
+  tr.setAttribute('class','row0');
+  tr.setAttribute('id','tr0');
+  
+  var cell=new Array();
+  
+  cell[0] = document.createElement('th'); //empty cell for padding
+  cell[0].innerHTML = " ";
+  
+  tr.appendChild(cell[0]);
+  	  
+  for (var ix = w_min+1; ix <= w_max+1; ix++){
+    cc = ix+charCodeRange.start-1;
+    ec=ix % 2;
+
+	  cell[ix] = document.createElement('th');
+	  cell[ix].setAttribute('class','hhead'+ec);
+	  cell[ix].setAttribute('id','th'+cc);
+	  cell[ix].innerHTML = String.fromCharCode(cc);
+    tr.appendChild(cell[ix]);  	  
+    
+  }
+  
+  table.appendChild(tr);
+
+  var i=offset;
+    
+  var row=new Array();
+  
+  for (var iy=h_min+1;iy <= h_max+1; iy++){
+    
+    er = iy % 2;
+    
+    row[iy]=document.createElement('tr');
+    row[iy].setAttribute('class','row'+ er);
+    row[iy].setAttribute('id','tr'+iy);
+    
+    var cell=new Array();
+    
+    cc = iy+charCodeRange.start-1;
+    
+    cell[0] = document.createElement('th');
+	  cell[0].setAttribute('class','vhead'+er);
+	  cell[0].setAttribute('id','th'+cc);
+	  cell[0].innerHTML = String.fromCharCode(cc);
+    row[iy].appendChild(cell[0]);
+    
+    for (var ix = w_min+1; ix <= w_max+1; ix++){
+    
+      var a = data.substr(i*groupsize,groupsize);
+      
+      ec=ix % 2;
+
+	    cell[ix] = document.createElement('td');
+	    cell[ix].setAttribute('class','row'+er+'col'+ec);
+	    cell[ix].setAttribute('id','td'+ix + "_" + iy);
+	    cell[ix].innerHTML = a;
+      row[iy].appendChild(cell[ix])
+      i++;
+    }
+    table.appendChild(row[iy]);
+  }
+  
+  return i;
+
+}
+
+
+function printout(data){
+  var i=outface(data,document.getElementById("frontCardTable"),0,0,width,0,height/2-1);
+  outface(data,document.getElementById("backCardTable"),i,0,width,(height/2),height-1);
+}
 
 
 var key= getParameter (window.top.location.search,"key");
-document.write("Your key is: " + key);
+//document.write("Your key is: " + key);
 
 var pad = genpad();
-var bf = new Blowfish(key);
-var ciphertext = bf.encrypt(pad);
-document.write("<p>ciphertext: "+ ciphertext + "</p>");
+var ciphertext = encrypt(key,pad);
+//document.write("<p>ciphertext: "+ ciphertext + "</p>");
 
-var plaintext = bf.decrypt(ciphertext);
-var base64text = Base64.encode(ciphertext);
+var encodedtext = encode(ciphertext);
+//document.write("<p>encodedtext: "+encodedtext + "</p>");
+
+var plaintext = decrypt(key,ciphertext);
 
 //var plaintextDiv = document.getElementById("plaintextDiv");
 //plaintextDiv.appendChild(document.createTextNode(plaintext));
 
 var ciphertextDiv = document.getElementById("ciphertextDiv");
-ciphertextDiv.appendChild(document.createTextNode(ciphertext))
+//ciphertextDiv.appendChild(document.createTextNode(encodedtext))
 
-var base64textDiv = document.getElementById("base64textDiv");
-base64textDiv.appendChild(document.createTextNode(base64text));
-
+printout(encodedtext);
 
 //var textpadDiv = document.getElementById("textpadDiv");
 //textpadDiv.appendChild(document.createTextNode(pad));
