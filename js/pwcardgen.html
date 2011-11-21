@@ -2,267 +2,58 @@
 <!-- $Id$ -->
 
 <head>
-<link href='style.css' rel='stylesheet' type='text/css' media='screen'>
-<link href='style.css' rel='stylesheet' type='text/css' media='print'>
-<script language="javascript" type="text/javascript" src="pwcardgen.js"></script>
-<title>Password Card Generator</title>
+  <link href='style.css' rel='stylesheet' type='text/css' media='screen'>
+  <link href='style.css' rel='stylesheet' type='text/css' media='print'>
+  <script language="javascript" type="text/javascript" src="pwcardgen.js"></script>
+  <script language="javascript" type="text/javascript" src="blowfish.js"></script>
+  <title>Password Card Generator</title>
 </head>
 
-<body onload="main();">
-<div id='genKey'></div>
-<div id='textpadDiv'></div>
-<div id='plaintextDiv'></div>
-<div id='ciphertextDiv'></div>
-<div id='base64textDiv'></div>
+<body>
 
-<div id='frontCard' class='cardDiv'>
-  <table id='frontCardTable' class='cardTable'>
-  </table>
-</div>
-<div id='backCard' class='cardDiv'>  
-<table id='backCardTable' class='cardTable'>
-  </table>
-</div>
+    <div id='heading'>
+        <h1>Password Card Generator</h1>
+    </div>
+    <div id='genKey'></div>
+    <div id='footer'>
+      <p>
+      This is a Password Card Generator. A password card is a business card filled with number and letters that you can use as password. You just have to remember, for each site, where to start in the card grid and in which direction read the cels. This makes the card safe to be kept in your wallet. Read the reference links below for more info about password cards.
+      </p>
+      <p>
+      You can genearate your own Password Card by entering any string (called "key") in the text area. If you lose your card, you can re-generate the same one by entering the same key.
+      </p>
+      <p>
+      This password card is generared by encrypting a common text pad (the sequence of ASCII characters from '!' until '~') using the blowfish algorithm with your own key. The encrypted stream is then base64 encoded, some characters are removed (see 'filter' variable in the code) and the result is then split in groups of characters that are displayed in a grid.  
+      </p>
+      <p>
+      This grid can then be printed, folded and put in your wallet.
+      </p>
+      <h3>References and links</h3>
+      <ul>
+          <li><a href='http://www.passwordcard.org/en'>PasswordCard</a>: the first implementation I see. Actually I started with the idea from this site and tryied to improve in some ways.</li>
+          <li><a href='http://lifehacker.com/5521990/passwordcard-hides-mentally-encrypted-passwords-in-your-wallet'>lifehacker: PasswordCard Hides Mentally Encrypted Passwords in Your Wallet</a></li>
+      </ul>
+    </div>
+
+    <div id='thecard' style='visibility:hidden;'>
+       <div id='textpadDiv'></div>
+       <div id='plaintextDiv'></div>
+       <div id='ciphertextDiv'></div>
+       <div id='base64textDiv'></div>
+       <div id='frontCard' class='cardDiv'>
+           <table id='frontCardTable' class='cardTable'></table>
+       </div>
+       <div id='backCard' class='cardDiv'>  
+           <table id='backCardTable' class='cardTable'></table>
+       </div>
+    </div>
+
+
 
 </body>
-<script type = "text/javascript" src="blowfish.js"></script>
-<script type = "text/javascript">
 
+  <script>
+    document.onload = main();
+  </script>
 
-var key;
-
-var charCodeRange = {
-	start: 65,
-	end: 90
-}
-var ascii_low = 33;
-var ascii_high = 126;
-var width=10; 
-var height=12;
-var groupsize=3;
-var filter="\\|£/()=^*][{}§~<>";
-
-
-function genpad(){
-
-  var pad = new Array();
-  for (var y=ascii_high;y > ascii_low; y--){
-    for (var x=ascii_low; x < ascii_high ; x++ ){
-      pad.push(String.fromCharCode(x));
-      pad.push(String.fromCharCode(y));
-    }
-  }
- return pad.join('');
-}
-
-function encode(data,filter){
-  var out = new String();
-  var l=data.length;
-  
-  for (var i=0; i <= data.length; i++){
-    var a = data.charCodeAt(i);
-    var v=(a % (ascii_high - ascii_low) + ascii_low);
-    var c=String.fromCharCode(v);
-    if (filter.indexOf(c) < 0){
-      out += c;
-    }
-  }
-  return out;
-}
-
-function getParameter ( queryString, parameterName ) {
-  // Add "=" to the parameter name (i.e. parameterName=value)
-  var parameterName = parameterName + "=";
-  if ( queryString.length > 0 ) {
-    // Find the beginning of the string
-    begin = queryString.indexOf ( parameterName );
-    // If the parameter name is not found, skip it, otherwise return the value
-    if ( begin != -1 ) {
-      // Add the length (integer) to the beginning
-      begin += parameterName.length;
-      // Multiple parameters are separated by the "&" sign
-      end = queryString.indexOf ( "&" , begin );
-      if ( end == -1 ) {
-        end = queryString.length
-      }
-      // Return the string
-      return unescape ( queryString.substring ( begin, end ) );
-    }
-    // Return "null" if no parameter has been found
-    return "null";
-  }
-}
-
-function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,y_opt){
-  var i=0
-  
-  var tr = document.createElement('tr');
-  
-  tr.setAttribute('class','row0');
-  tr.setAttribute('id','tr0');
-  
-  var cell=new Array();
-  
-  cell[0] = document.createElement('th'); //empty cell for padding
-  cell[0].innerHTML = " ";
-  
-  tr.appendChild(cell[0]);
-
-  var k=0;
-
-  //Table heading row
-  for (var ix = w_min+1; ix <= w_max; ix++){
-    cc = ix+charCodeRange.start-1;
-    c2 = ix+charCodeRange.start+w_max-1;
-
-    ec=ix % 2;
-
-	  cell[ix] = document.createElement('th');
-	  cell[ix].setAttribute('class','hhead'+ec);
-	  cell[ix].setAttribute('id','th'+cc);
-	  if (x_opt == "x_alpha"){
-          cell[ix].innerHTML = String.fromCharCode(cc);
-      } else if (x_opt == "x_multi"){
-          cell[ix].innerHTML = String.fromCharCode(cc) + String.fromCharCode(c2) + "<br>" + pad(k,2,'0');
-      } else {
-  	  cell[ix].innerHTML = ix-1;
-  	}
-    tr.appendChild(cell[ix]);  	  
-    
-    k++;
-  }
-  
-  table.appendChild(tr);
-
-  var i=offset;
-    
-  var row=new Array();
-
-  k=h_min;
-  for (var iy=h_min+1;iy <= h_max+1; iy++){
-    
-    er = iy % 2;
-    
-    row[iy]=document.createElement('tr');
-    row[iy].setAttribute('class','row'+ er);
-    row[iy].setAttribute('id','tr'+iy);
-    
-    var cell=new Array();
-    
-    cc = iy+charCodeRange.start-1;
-    c2 = iy+charCodeRange.start-1+h_max;
-
-    //Table right heading column
-    cell[0] = document.createElement('th');
-	  cell[0].setAttribute('class','vhead'+er);
-	  cell[0].setAttribute('id','th'+cc);
-	  if (y_opt=="y_alpha"){
-  	  cell[0].innerHTML = String.fromCharCode(cc);
-      } else if (y_opt == "y_multi"){
-          cell[0].innerHTML = String.fromCharCode(cc) + String.fromCharCode(c2) + pad(k,2,'0');
-  	} else {
-  	  cell[0].innerHTML = iy-1;
-  	}
-    row[iy].appendChild(cell[0]);
-    k++;
-    
-    for (var ix = w_min+1; ix <= w_max; ix++){
-    
-      var a = data.substr(i*groupsize,groupsize);
-      
-      ec=ix % 2;
-
-	    cell[ix] = document.createElement('td');
-	    cell[ix].setAttribute('class','row'+er+'col'+ec);
-	    cell[ix].setAttribute('id','td'+ix + "_" + iy);
-	    cell[ix].innerHTML = a;
-      row[iy].appendChild(cell[ix])
-      i++;
-    }
-    table.appendChild(row[iy]);
-  }
-  
-  return i;
-
-}
-
-
-function printout(data,width,height,groupsize,x_opt,y_opt){
-  var i=printoutface(data,
-    document.getElementById("frontCardTable"),
-    0,0,width,0,height/2-1,
-    groupsize,
-    x_opt,y_opt);
-  printoutface(data,document.getElementById("backCardTable"),
-    i,0,width,(height/2),height-1,
-    groupsize,
-    x_opt,y_opt);
-}
-
-function genPasswordCard(key,filter){
-
-  var pad = genpad();
-  var ciphertext = encrypt(key,pad);
-  //document.write("<p>ciphertext: "+ ciphertext + "</p>");
-
-  var encodedtext = encode(ciphertext,filter);
-
-  return encodedtext;
-}
-
-
-function getKeyFromTextArea(){
-
-key = document.getElementById('keyTextArea').value;
-genKeyDiv=document.getElementById("genKey");
-keyTextArea=document.getElementById("keyTextArea");
-button=document.getElementById("genButton");
-
-genKeyDiv.removeChild(keyTextArea);
-genKeyDiv.removeChild(button);
-
-    document.getElementById('frontCard').style.visibility = 'visible'; 
-    document.getElementById('backCard').style.visibility = 'visible'; 
-var encodedtext = genPasswordCard(key,filter);
-
-printout(encodedtext,width,height,groupsize,"x_multi","y_multi");
-}
-
-function main(){
-key = getParameter (window.top.location.search,"key");
-
-if (key == null){
-    document.write('Key is null');
-    genKeyDiv=document.getElementById("genKey");   
-
-    document.getElementById('frontCard').style.visibility = 'hidden'; 
-    document.getElementById('backCard').style.visibility = 'hidden'; 
-
-    var keyTextArea = document.createElement('textarea');
-    keyTextArea.setAttribute('placeholder','Write here the key to use for generate your passwordCard');
-    keyTextArea.setAttribute('id','keyTextArea');
-    keyTextArea.setAttribute('required','true');
-    keyTextArea.setAttribute('cols','40');
-    genKeyDiv.appendChild(keyTextArea);
-    
-    var buttonnode= document.createElement('input');
-    buttonnode.setAttribute('id','genButton');
-    buttonnode.setAttribute('type','button');
-    buttonnode.setAttribute('name','Generate');
-    buttonnode.setAttribute('value','Generate');
-    genKeyDiv.appendChild(buttonnode);
-    buttonnode.onclick = getKeyFromTextArea;
-   
-}
-else
-{
-
-var encodedtext = genPasswordCard(key,filter);
-
-printout(encodedtext,width,height,groupsize,"x_multi","y_multi");
-
-}
-}
-
-</script>
 </html>

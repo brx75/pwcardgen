@@ -72,3 +72,9 @@ div.cardDiv {
     -moz-border-radius: 20px;
 }
 
+div#genKey {
+    width: 500px;
+    /*float: center;*/
+    margin: auto;
+}
+
