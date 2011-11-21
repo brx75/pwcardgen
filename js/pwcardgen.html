@@ -1,12 +1,15 @@
 <html>
+<!-- $Id$ -->
 
 <head>
 <link href='style.css' rel='stylesheet' type='text/css' media='screen'>
 <link href='style.css' rel='stylesheet' type='text/css' media='print'>
+<script language="javascript" type="text/javascript" src="pwcardgen.js"></script>
 <title>Password Card Generator</title>
 </head>
 
-<body>
+<body onload="main();">
+<div id='genKey'></div>
 <div id='textpadDiv'></div>
 <div id='plaintextDiv'></div>
 <div id='ciphertextDiv'></div>
@@ -26,6 +29,7 @@
 <script type = "text/javascript">
 
 
+var key;
 
 var charCodeRange = {
 	start: 65,
@@ -33,6 +37,10 @@ var charCodeRange = {
 }
 var ascii_low = 33;
 var ascii_high = 126;
+var width=10; 
+var height=12;
+var groupsize=3;
+var filter="\\|£/()=^*][{}§~<>";
 
 
 function genpad(){
@@ -101,9 +109,11 @@ function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,
   tr.appendChild(cell[0]);
 
   var k=0;
-  for (var ix = w_min+1; ix <= w_max+1; ix++){
+
+  //Table heading row
+  for (var ix = w_min+1; ix <= w_max; ix++){
     cc = ix+charCodeRange.start-1;
-    c2 = ix+charCodeRange.start+w_max;
+    c2 = ix+charCodeRange.start+w_max-1;
 
     ec=ix % 2;
 
@@ -113,7 +123,7 @@ function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,
 	  if (x_opt == "x_alpha"){
           cell[ix].innerHTML = String.fromCharCode(cc);
       } else if (x_opt == "x_multi"){
-          cell[ix].innerHTML = String.fromCharCode(cc) + "<br>" + String.fromCharCode(c2) + "<br>" + k;
+          cell[ix].innerHTML = String.fromCharCode(cc) + String.fromCharCode(c2) + "<br>" + pad(k,2,'0');
       } else {
   	  cell[ix].innerHTML = ix-1;
   	}
@@ -141,21 +151,22 @@ function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,
     
     cc = iy+charCodeRange.start-1;
     c2 = iy+charCodeRange.start-1+h_max;
-    
+
+    //Table right heading column
     cell[0] = document.createElement('th');
 	  cell[0].setAttribute('class','vhead'+er);
 	  cell[0].setAttribute('id','th'+cc);
 	  if (y_opt=="y_alpha"){
   	  cell[0].innerHTML = String.fromCharCode(cc);
       } else if (y_opt == "y_multi"){
-          cell[0].innerHTML = String.fromCharCode(cc) + "" + String.fromCharCode(c2) + "" + k;
+          cell[0].innerHTML = String.fromCharCode(cc) + String.fromCharCode(c2) + pad(k,2,'0');
   	} else {
   	  cell[0].innerHTML = iy-1;
   	}
     row[iy].appendChild(cell[0]);
     k++;
     
-    for (var ix = w_min+1; ix <= w_max+1; ix++){
+    for (var ix = w_min+1; ix <= w_max; ix++){
     
       var a = data.substr(i*groupsize,groupsize);
       
@@ -199,17 +210,59 @@ function genPasswordCard(key,filter){
   return encodedtext;
 }
 
-/* MAIN */
-var width=10; 
-var height=14;
-var groupsize=3;
 
-var key= getParameter (window.top.location.search,"key");
+function getKeyFromTextArea(){
 
-var filter="\\|£/()=^*][{}§~<>"
+key = document.getElementById('keyTextArea').value;
+genKeyDiv=document.getElementById("genKey");
+keyTextArea=document.getElementById("keyTextArea");
+button=document.getElementById("genButton");
+
+genKeyDiv.removeChild(keyTextArea);
+genKeyDiv.removeChild(button);
+
+    document.getElementById('frontCard').style.visibility = 'visible'; 
+    document.getElementById('backCard').style.visibility = 'visible'; 
 var encodedtext = genPasswordCard(key,filter);
 
 printout(encodedtext,width,height,groupsize,"x_multi","y_multi");
+}
+
+function main(){
+key = getParameter (window.top.location.search,"key");
+
+if (key == null){
+    document.write('Key is null');
+    genKeyDiv=document.getElementById("genKey");   
+
+    document.getElementById('frontCard').style.visibility = 'hidden'; 
+    document.getElementById('backCard').style.visibility = 'hidden'; 
+
+    var keyTextArea = document.createElement('textarea');
+    keyTextArea.setAttribute('placeholder','Write here the key to use for generate your passwordCard');
+    keyTextArea.setAttribute('id','keyTextArea');
+    keyTextArea.setAttribute('required','true');
+    keyTextArea.setAttribute('cols','40');
+    genKeyDiv.appendChild(keyTextArea);
+    
+    var buttonnode= document.createElement('input');
+    buttonnode.setAttribute('id','genButton');
+    buttonnode.setAttribute('type','button');
+    buttonnode.setAttribute('name','Generate');
+    buttonnode.setAttribute('value','Generate');
+    genKeyDiv.appendChild(buttonnode);
+    buttonnode.onclick = getKeyFromTextArea;
+   
+}
+else
+{
+
+var encodedtext = genPasswordCard(key,filter);
+
+printout(encodedtext,width,height,groupsize,"x_multi","y_multi");
+
+}
+}
 
 </script>
 </html>
