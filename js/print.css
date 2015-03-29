@@ -1,0 +1,83 @@
+th {
+  padding-right: 5px;
+  padding-left: 5px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  
+  font-weight: bolder;
+}
+
+td {
+  padding-right: 5px;
+  padding-left: 5px;
+  padding-top: 0px;
+  padding-bottom: 0px; 
+}
+
+tr.row1 > th.row1col0 {
+  background-color: #99ff99;
+  border-right: 1px solid #666666 !important;
+
+}
+
+th.vhead0 {
+  border-right: 1px solid #666666 !important;
+  width: 39px !important;
+}
+th.vhead1 {
+  border-right: 1px solid #666666 !important;
+  width: 39px !important;
+  background-color: #deeede;
+}
+
+th.hhead0 {
+    border-bottom: 1px solid #666666 !important;
+}
+th.hhead1 {
+    border-bottom: 1px solid #666666 !important;
+    background-color: #99ff99;
+}
+
+td.row0col1 {
+  background-color: #99ff99;
+}
+
+td.row1col1 {
+  background-color: #a1d0a1;
+}
+
+td.row1col0 {
+  background-color: #deeede;
+}
+
+
+table.cardTable {
+  border: 0px solid #666666;
+  font-family: monospace;
+  font-size: 9px;
+/*  font-weight: bold;*/
+  text-align: center;
+  width: 3in;
+  height: 2in;
+  padding:0px;
+  margin-left:4px;
+  margin-right:4px;
+  margin-top:4px;
+  margin-bottom:4px;
+  border-collapse: collapse;
+}
+
+div.cardDiv {
+  width: 3.125in;
+  height: 2.125in;
+  border: 1px solid  #bfbfbf;
+  border-radius: 20px;
+    -moz-border-radius: 20px;
+}
+
+div#genKey {
+    width: 500px;
+    /*float: center;*/
+    margin: auto;
+}
+
