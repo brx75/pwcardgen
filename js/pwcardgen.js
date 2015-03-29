@@ -1,15 +1,24 @@
+var version='1.2';
+
 var key;
 
 var charCodeRange = {
   start: 65,
   end: 90
-}
+};
+
 var ascii_low = 33;
 var ascii_high = 126;
-var width=10; 
+var width=10;
 var height=12;
 var groupsize=3;
 var filter="\\|£/()=^*][{}§~<>";
+
+var symbol_map = ['&#x2600','&#x2601','&#x2602','&#x2603','&#x260E',
+                  '&#x2618','&#x2620','&#x2622','&#x2623','&#x2624',
+                  '&#x262D','&#x262E','&#x262F','&#x263A','&#x265A',
+                  '&#x265E','&#x2660','&#x2661','&#x2662','&#x2663',
+                  '&#x2664','&#x2665','&#x2666','&#x2667','&x#266A' ]; // map of nice Unicode/UTF-8 symbols
 
 // pad function taken from "http://www.electrictoolbox.com/pad-number-zeroes-javascript/"
 function pad(number, length,padding) {
@@ -23,7 +32,7 @@ function pad(number, length,padding) {
 
 function genpad(){
 
-  var pad = new Array();
+  var pad = [];
   for (var y=ascii_high;y > ascii_low; y--){
     for (var x=ascii_low; x < ascii_high ; x++ ){
       pad.push(String.fromCharCode(x));
@@ -34,7 +43,7 @@ function genpad(){
 }
 
 function encode(data,filter){
-  var out = new String();
+  var out;
   var l=data.length;
   
   for (var i=0; i <= data.length; i++){
@@ -50,7 +59,7 @@ function encode(data,filter){
 
 function getParameter ( queryString, parameterName ) {
   // Add "=" to the parameter name (i.e. parameterName=value)
-  var parameterName = parameterName + "=";
+  parameterName = parameterName + "=";
   if ( queryString.length > 0 ) {
     // Find the beginning of the string
     begin = queryString.indexOf ( parameterName );
@@ -61,7 +70,7 @@ function getParameter ( queryString, parameterName ) {
       // Multiple parameters are separated by the "&" sign
       end = queryString.indexOf ( "&" , begin );
       if ( end == -1 ) {
-        end = queryString.length
+        end = queryString.length;
       }
       // Return the string
       return unescape ( queryString.substring ( begin, end ) );
@@ -72,21 +81,20 @@ function getParameter ( queryString, parameterName ) {
 }
 
 function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,y_opt){
-  var i=0
+  var i=0;
+  var k=0;
+  var s=0;
+  var cell=[];
   
   var tr = document.createElement('tr');
   
   tr.setAttribute('class','row0');
   tr.setAttribute('id','tr0');
   
-  var cell=new Array();
-  
   cell[0] = document.createElement('th'); //empty cell for padding
   cell[0].innerHTML = " ";
   
   tr.appendChild(cell[0]);
-
-  var k=0;
 
   //Table heading row
   for (var ix = w_min+1; ix <= w_max; ix++){
@@ -95,26 +103,28 @@ function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,
 
     ec=ix % 2;
 
+
     cell[ix] = document.createElement('th');
     cell[ix].setAttribute('class','hhead'+ec);
     cell[ix].setAttribute('id','th'+cc);
     if (x_opt == "x_alpha"){
           cell[ix].innerHTML = String.fromCharCode(cc);
       } else if (x_opt == "x_multi"){
-          cell[ix].innerHTML = String.fromCharCode(cc) + String.fromCharCode(c2) + "<br>" + pad(k,2,'0');
+          cell[ix].innerHTML = String.fromCharCode(cc) + String.fromCharCode(c2) + "<br>" + pad(k,2,'0') + "<br>" + symbol_map[k+s];
       } else {
       cell[ix].innerHTML = ix-1;
     }
-    tr.appendChild(cell[ix]);     
+    tr.appendChild(cell[ix]);
     
     k++;
   }
-  
+
+  s = k;
   table.appendChild(tr);
 
-  var i=offset;
+  i=offset;
     
-  var row=new Array();
+  var row=[];
 
   k=h_min;
   for (var iy=h_min+1;iy <= h_max+1; iy++){
@@ -125,26 +135,26 @@ function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,
     row[iy].setAttribute('class','row'+ er);
     row[iy].setAttribute('id','tr'+iy);
     
-    var cell=new Array();
+    cell=[];
     
     cc = iy+charCodeRange.start-1;
     c2 = iy+charCodeRange.start-1+h_max;
 
-    //Table right heading column
+    //Table left heading column
     cell[0] = document.createElement('th');
     cell[0].setAttribute('class','vhead'+er);
     cell[0].setAttribute('id','th'+cc);
     if (y_opt=="y_alpha"){
       cell[0].innerHTML = String.fromCharCode(cc);
       } else if (y_opt == "y_multi"){
-          cell[0].innerHTML = String.fromCharCode(cc) + String.fromCharCode(c2) + pad(k,2,'0');
+          cell[0].innerHTML = String.fromCharCode(cc) + String.fromCharCode(c2) + pad(k,2,'0')+ "<br>" + symbol_map[k+s];
     } else {
       cell[0].innerHTML = iy-1;
     }
     row[iy].appendChild(cell[0]);
     k++;
     
-    for (var ix = w_min+1; ix <= w_max; ix++){
+    for (ix = w_min+1; ix <= w_max; ix++){
     
       var a = data.substr(i*groupsize,groupsize);
       
@@ -154,7 +164,7 @@ function printoutface(data,table,offset,w_min,w_max,h_min,h_max,groupsize,x_opt,
       cell[ix].setAttribute('class','row'+er+'col'+ec);
       cell[ix].setAttribute('id','td'+ix + "_" + iy);
       cell[ix].innerHTML = a;
-      row[iy].appendChild(cell[ix])
+      row[iy].appendChild(cell[ix]);
       i++;
     }
     table.appendChild(row[iy]);
@@ -198,9 +208,9 @@ function getKeyFromTextArea(){
   genKeyDiv.removeChild(keyTextArea);
   genKeyDiv.removeChild(button);
 
-  document.getElementById('thecard').style.visibility = 'visible'; 
-  document.getElementById('frontCard').style.visibility = 'visible'; 
-  document.getElementById('backCard').style.visibility = 'visible'; 
+  document.getElementById('thecard').style.visibility = 'visible';
+  document.getElementById('frontCard').style.visibility = 'visible';
+  document.getElementById('backCard').style.visibility = 'visible';
   
   var heading=document.getElementById('heading');
   var footer=document.getElementById('footer');
@@ -219,17 +229,17 @@ function main(){
   key = getParameter (window.top.location.search,"key");
 
   if (key == null){
-    genKeyDiv=document.getElementById("genKey");   
+    genKeyDiv=document.getElementById("genKey");
     
-    document.getElementById('frontCard').style.visibility = 'hidden'; 
-    document.getElementById('backCard').style.visibility = 'hidden'; 
+    document.getElementById('frontCard').style.visibility = 'hidden';
+    document.getElementById('backCard').style.visibility = 'hidden';
     
     var keyTextArea = document.createElement('textarea');
     keyTextArea.setAttribute('placeholder','Write here the key to use for generate your passwordCard');
     keyTextArea.setAttribute('id','keyTextArea');
     keyTextArea.setAttribute('required','true');
     keyTextArea.setAttribute('cols','40');
-    genKeyDiv.appendChild(keyTextArea);
+   genKeyDiv.appendChild(keyTextArea);
     
     var buttonnode= document.createElement('input');
     buttonnode.setAttribute('id','genButton');
@@ -238,11 +248,11 @@ function main(){
     buttonnode.setAttribute('value','Generate');
     genKeyDiv.appendChild(buttonnode);
     buttonnode.onclick = getKeyFromTextArea;
-   
+
   }
 else
   {
     var encodedtext = genPasswordCard(key,filter);
     printout(encodedtext,width,height,groupsize,"x_multi","y_multi");
-  }
+ }
 }

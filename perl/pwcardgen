@@ -40,7 +40,7 @@ my $method=$ARGV[0] || "usage";
 
 # Parse "--filter=... --filter=..."
 @opt_filter = split(/,/,join(',',@opt_filter));
-if (defined(@opt_filter)){
+if (@opt_filter){
     if ($opt_filter[0] =~ /^help$/ ) {
         print "Defined char filters: ";
         print (join(' ',(keys(%kfilter))));

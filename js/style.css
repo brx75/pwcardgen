@@ -54,19 +54,22 @@ td.row1col0 {
 table.cardTable {
   border: 0px solid #666666;
   font-family: monospace;
-  font-size: 34px;
+  font-size: 9px;
 /*  font-weight: bold;*/
   text-align: center;
-  width: 990px;
-  height: 637px;
+  width: 3in;
+  height: 2in;
   padding:0px;
-  margin-left:10px;
+  margin-left:4px;
+  margin-right:4px;
+  margin-top:4px;
+  margin-bottom:4px;
   border-collapse: collapse;
 }
 
 div.cardDiv {
-	width: 1011;
-	height: 637;
+	width: 3.125in;
+	height: 2.125in;
 	border: 1px solid  #bfbfbf;
 	border-radius: 20px;
     -moz-border-radius: 20px;
